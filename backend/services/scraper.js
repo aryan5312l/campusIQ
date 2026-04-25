@@ -1,8 +1,13 @@
 const puppeteer = require("puppeteer")
 
-const scrapeAcademicData = async () => {
+const scrapeAcademicData = async ({studentId, dob}) => {
+
+    if(!studentId || !dob){
+        return new Error("StudentId and dob are required");
+    }
+
     const browser = await puppeteer.launch({
-        headless: false //False for debugging
+        headless: true //False for debugging
     });
 
     const page = await browser.newPage();
@@ -12,8 +17,8 @@ const scrapeAcademicData = async () => {
         await page.goto(`${BASE_URL}index.php`, { waitUntil: "networkidle2" });
 
         //Fill the details
-        await page.type("#username", "4NI23IS051");
-        const dob = "2003-09-11";
+        await page.type("#username", studentId);
+        // const dob = "2003-09-11";
         const [year, month, day] = dob.split("-");
 
         await page.select("#dd", day.padStart(2, "0") + " ");
@@ -151,16 +156,17 @@ const scrapeAcademicData = async () => {
         }
 
         console.log(JSON.stringify(subjectsData, null, 2));
+        return subjectsData;
 
 
     } catch (error) {
         console.error("failed to scrap: ", error);
     } finally {
-        await browser.close();
+        if(browser) await browser.close();
     }
 }
 
 
-scrapeAcademicData();
+//scrapeAcademicData();
 
 module.exports = { scrapeAcademicData };

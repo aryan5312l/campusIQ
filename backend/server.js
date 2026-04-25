@@ -1,5 +1,7 @@
 const express = require("express");
 const {connectDB}  = require("./config/dbConfig");
+const syncRoutes = require("./routes/syncRoutes")
+const authRoutes = require("./routes/authRoutes");
 const app = express();
 const PORT = process.env.PORT || 3000;
 
@@ -7,9 +9,9 @@ const PORT = process.env.PORT || 3000;
 app.use(express.json());
 
 
-app.get("/", (req, res) => {
-    res.send("ALL is working fine");
-})
+app.use("/api/auth", authRoutes);
+app.use("/api", syncRoutes);
+
 
 
 //Start Server
