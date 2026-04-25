@@ -1,8 +1,9 @@
 const {scrapeAcademicData} = require("../services/scraper");
+const AcademicData = require("../models/academicDataModel");
 
 const syncData = async(req, res) => {
     try {
-        const { studentId, dob } = req.body;
+        const { studentId, dob } = req.user;
 
         if(!studentId || !dob) {
             return res.status(400).json({
@@ -12,6 +13,15 @@ const syncData = async(req, res) => {
         }
 
         const data = await scrapeAcademicData({studentId, dob});
+
+        if(!data || data.length === 0) {
+            throw new Error("No data scraped");
+        }
+
+        await AcademicData.create({
+            userId: req.user._id,
+            subjects: data
+        });
 
         return res.status(200).json({
             success: true,

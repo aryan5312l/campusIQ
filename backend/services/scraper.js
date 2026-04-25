@@ -1,9 +1,9 @@
 const puppeteer = require("puppeteer")
 
-const scrapeAcademicData = async ({studentId, dob}) => {
+const scrapeAcademicData = async ({ studentId, dob }) => {
 
-    if(!studentId || !dob){
-        return new Error("StudentId and dob are required");
+    if (!studentId || !dob) {
+        throw new Error("StudentId and dob are required");
     }
 
     const browser = await puppeteer.launch({
@@ -29,7 +29,15 @@ const scrapeAcademicData = async ({studentId, dob}) => {
         await Promise.all([
             page.click(".cn-submit1"),
             page.waitForNavigation()
-        ])
+        ]);
+
+        await new Promise(resolve => setTimeout(resolve, 1000)); // small delay
+
+        const isDashboard = await page.$("tbody tr");
+
+        if (!isDashboard) {
+            throw new Error("Invalid credentials or login failed");
+        }
 
         console.log("Logged In successfully...");
 
@@ -162,7 +170,7 @@ const scrapeAcademicData = async ({studentId, dob}) => {
     } catch (error) {
         console.error("failed to scrap: ", error);
     } finally {
-        if(browser) await browser.close();
+        if (browser) await browser.close();
     }
 }
 

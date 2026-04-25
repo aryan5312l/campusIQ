@@ -13,10 +13,14 @@ const AcademicDataSchema = new mongoose.Schema({
                 required: true
             },
             courseId: String,
-            attendance: {
-                type: Number,
-                min: 0,
-                max: 100
+            attendanceData: {
+                summary: {
+                    present: Number,
+                    absent: Number,
+                    remaining: Number
+                },
+                presentList: [],
+                absentList: []
             },
             marks: {
                 type: String,
