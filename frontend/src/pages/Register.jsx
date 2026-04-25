@@ -25,7 +25,7 @@ export default function Register() {
   };
 
   return (
-    <div>
+    <div className="login-container">
       <h2>Register</h2>
 
       <form onSubmit={handleSubmit}>
@@ -47,7 +47,7 @@ export default function Register() {
         <button>Register</button>
       </form>
 
-      <p>Already have an account? <Link to="/">Login</Link></p>
+      <p>Already have an account? <Link to="/login">Login</Link></p>
     </div>
   );
 }

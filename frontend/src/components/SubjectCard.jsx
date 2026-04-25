@@ -1,5 +1,8 @@
 export default function SubjectCard({ subject }) {
-  const attendance = subject.attendance || 0;
+  const attendance = subject.attendanceData.summary.present || 0;
+  const absent = subject.attendanceData.summary.absent || 0;
+  const remaining = subject.attendanceData.summary.remaining;
+  const total = attendance + absent + remaining;
 
   const getColor = () => {
     if (attendance >= 85) return "#4CAF50"; // green
