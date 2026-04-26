@@ -76,94 +76,118 @@ const scrapeAcademicData = async ({ studentId, dob }) => {
         const rowsCount = await page.$$eval("tbody tr", rows => rows.length);
 
         for (let i = 0; i < rowsCount; i++) {
+            try {
+                // Re-fetch rows every iteration (VERY IMPORTANT)
+                const rows = await page.$$("tbody tr");
+                const row = rows[i];
 
-            // Re-fetch rows every iteration (VERY IMPORTANT)
-            const rows = await page.$$("tbody tr");
-            const row = rows[i];
+                const courseId = await row.$eval("td:nth-child(1)", el => el.innerText.trim());
+                const name = await row.$eval("td:nth-child(2)", el => el.innerText.trim());
 
-            const courseId = await row.$eval("td:nth-child(1)", el => el.innerText.trim());
-            const name = await row.$eval("td:nth-child(2)", el => el.innerText.trim());
+                const attendanceBtn = await row.$("td:nth-child(4) a");
 
-            const attendanceBtn = await row.$("td:nth-child(4) a");
+                // Click attendance button
+                await Promise.all([
+                    attendanceBtn.click(),
+                    page.waitForNavigation({ waitUntil: "networkidle2" })
+                ]);
 
-            // Click attendance button
-            await Promise.all([
-                attendanceBtn.click(),
-                page.waitForNavigation({ waitUntil: "networkidle2" })
-            ]);
+                // Wait for attendance page
+                await page.waitForSelector(".cn-legend");
 
-            // Wait for attendance page
-            await page.waitForSelector(".cn-legend");
+                // Extract data
+                await page.waitForSelector(".cn-legend span")
+                const attendanceData = await page.evaluate(() => {
+                    const summary = { present: 0, absent: 0, remaining: 0 };
 
-            // Extract data
-            await page.waitForSelector(".cn-legend span")
-            const attendanceData = await page.evaluate(() => {
-                const summary = { present: 0, absent: 0, remaining: 0 };
+                    document.querySelectorAll(".cn-legend span").forEach(el => {
+                        const text = el.innerText.trim();
 
-                document.querySelectorAll(".cn-legend span").forEach(el => {
-                    const text = el.innerText.trim();
+                        //Extract number safely
+                        const rawText = el.innerText.replace(/\s+/g, ' ').trim();
+                        const match = rawText.match(/\[(\d*)\]/);
+                        const value = match && match[1] ? parseInt(match[1], 10) : 0;
 
-                    //Extract number safely
-                    const rawText = el.innerText.replace(/\s+/g, ' ').trim();
-                    const match = rawText.match(/\[(\d*)\]/);
-                    const value = match && match[1] ? parseInt(match[1], 10) : 0;
+                        //page.on('console', msg => console.log('PAGE LOG:', msg.text()));
 
-                    //page.on('console', msg => console.log('PAGE LOG:', msg.text()));
+                        if (rawText.toLowerCase().includes("present")) {
+                            summary.present = value;
+                        } else if (rawText.toLowerCase().includes("absent")) {
+                            summary.absent = value;
+                        } else if (rawText.toLowerCase().includes("still")) {
+                            summary.remaining = value;
+                        }
+                    });
 
-                    if (rawText.toLowerCase().includes("present")) {
-                        summary.present = value;
-                    } else if (rawText.toLowerCase().includes("absent")) {
-                        summary.absent = value;
-                    } else if (rawText.toLowerCase().includes("still")) {
-                        summary.remaining = value;
+                    const presentList = [];
+                    document.querySelectorAll(".cn-attend-list1 tbody tr").forEach(row => {
+                        const cols = row.querySelectorAll("td");
+
+                        presentList.push({
+                            date: cols[1]?.innerText.trim(),
+                            time: cols[2]?.innerText.trim(),
+                            status: cols[3]?.innerText.trim()
+                        });
+                    });
+
+                    const absentList = [];
+                    document.querySelectorAll(".cn-attend-list2 tbody tr").forEach(row => {
+                        const cols = row.querySelectorAll("td");
+
+                        absentList.push({
+                            date: cols[1]?.innerText.trim(),
+                            time: cols[2]?.innerText.trim(),
+                            status: cols[3]?.innerText.trim()
+                        });
+                    });
+
+                    return {
+                        summary,
+                        presentList,
+                        absentList
+                    };
+                });
+
+                subjectsData.push({
+                    courseId,
+                    name,
+                    attendanceData
+                });
+
+                console.log(`Done: ${name}`);
+
+                // 🔥 Go back safely
+                await Promise.all([
+                    page.goBack(),
+                    page.waitForSelector("tbody tr")
+                ]);
+            } catch (subjectError) {
+                console.error(`Failed to extract attendance for subject ${i}:`, subjectError.message);
+                // Add subject with default attendance data
+                const rows = await page.$$("tbody tr");
+                const row = rows[i];
+                const courseId = await row.$eval("td:nth-child(1)", el => el.innerText.trim()).catch(() => "Unknown");
+                const name = await row.$eval("td:nth-child(2)", el => el.innerText.trim()).catch(() => "Unknown Subject");
+                subjectsData.push({
+                    courseId,
+                    name,
+                    attendanceData: {
+                        summary: { present: 0, absent: 0, remaining: 0 },
+                        presentList: [],
+                        absentList: []
                     }
                 });
-
-                const presentList = [];
-                document.querySelectorAll(".cn-attend-list1 tbody tr").forEach(row => {
-                    const cols = row.querySelectorAll("td");
-
-                    presentList.push({
-                        date: cols[1]?.innerText.trim(),
-                        time: cols[2]?.innerText.trim(),
-                        status: cols[3]?.innerText.trim()
-                    });
-                });
-
-                const absentList = [];
-                document.querySelectorAll(".cn-attend-list2 tbody tr").forEach(row => {
-                    const cols = row.querySelectorAll("td");
-
-                    absentList.push({
-                        date: cols[1]?.innerText.trim(),
-                        time: cols[2]?.innerText.trim(),
-                        status: cols[3]?.innerText.trim()
-                    });
-                });
-
-                return {
-                    summary,
-                    presentList,
-                    absentList
-                };
-            });
-
-            subjectsData.push({
-                courseId,
-                name,
-                attendanceData
-            });
-
-            console.log(`Done: ${name}`);
-
-            // 🔥 Go back safely
-            await Promise.all([
-                page.goBack(),
-                page.waitForSelector("tbody tr")
-            ]);
+                // Try to go back if possible
+                try {
+                    await page.goBack();
+                    await page.waitForSelector("tbody tr");
+                } catch (backError) {
+                    console.error("Failed to go back:", backError.message);
+                }
+            }
         }
 
-        console.log(JSON.stringify(subjectsData, null, 2));
+        //console.log(JSON.stringify(subjectsData, null, 2));
         return subjectsData;
 
 
