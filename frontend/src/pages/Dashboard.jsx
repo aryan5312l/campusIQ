@@ -26,7 +26,10 @@ export default function Dashboard() {
         }
         setLoading(false);
       } else {
-        await handleSync();
+        const synced = await handleSync();
+        if (!synced) {
+          setLoading(false);
+        }
       }
     } catch (err) {
       console.log("Dashboard error:", err);
@@ -41,8 +44,11 @@ export default function Dashboard() {
       await syncData();
       // Re-fetch dashboard data to get the latest synced date and updated data
       await fetchDashboard();
+      return true;
     } catch (err) {
-      alert("Sync failed. Please try again.");
+      const message = err?.response?.data?.message || "Sync failed. Please try again.";
+      alert(message);
+      return false;
     } finally {
       setSyncing(false);
     }
