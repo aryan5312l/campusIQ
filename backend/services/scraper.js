@@ -7,7 +7,8 @@ const scrapeAcademicData = async ({ studentId, dob }) => {
     }
 
     const browser = await puppeteer.launch({
-        headless: true //False for debugging
+        headless: true,
+        args: ['--no-sandbox', '--disable-setuid-sandbox'],
     });
 
     const page = await browser.newPage();

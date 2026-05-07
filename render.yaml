@@ -1,0 +1,12 @@
+services:
+  - type: web
+    name: campusiq-backend
+    runtime: node
+    region: oregon
+    plan: free
+    branch: main
+    buildCommand: cd backend && npm run build
+    startCommand: cd backend && npm start
+    envVars:
+      - key: NODE_ENV
+        value: production
