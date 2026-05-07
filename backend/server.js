@@ -7,7 +7,10 @@ const app = express();
 const PORT = process.env.PORT || 3000;
 
 //Middleware to parse JSON body
-app.use(cors());
+app.use(cors({
+    origin: "https://nieiq.onrender.com",
+    credentials: true
+}));
 app.use(express.json());
 
 
