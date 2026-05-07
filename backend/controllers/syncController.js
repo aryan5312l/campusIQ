@@ -6,6 +6,7 @@ const syncData = async(req, res) => {
         const { studentId, dob } = req.user;
 
         if(!studentId || !dob) {
+            console.error("Missing studentId or dob:", { studentId, dob, user: req.user });
             return res.status(400).json({
                 success: false,
                 message: "studentId and dob are required"
@@ -32,21 +33,20 @@ const syncData = async(req, res) => {
             throw new Error("No data scraped");
         }
 
-        await AcademicData.create({
+        const academicRecord = await AcademicData.create({
             userId: req.user._id,
             subjects: data
         });
 
         return res.status(200).json({
             success: true,
-            data
+            data: academicRecord
         });
     } catch (error) {
-        console.error("Sync Error: ", error.message);
-
+        console.error("Sync Error: ", error);
         return res.status(500).json({
             success: false,
-            message: "Failed to sync data"
+            message: error.message || "Failed to sync data"
         });
     }
 }

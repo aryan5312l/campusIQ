@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import API, { syncData } from "../services/api";
+import { syncData, getDashboard } from "../services/api";
 import { useNavigate } from "react-router-dom";
 
 export default function Dashboard() {
@@ -15,7 +15,7 @@ export default function Dashboard() {
   // Fetch saved data
   const fetchDashboard = async () => {
     try {
-      const res = await API.get("/dashboard");
+      const res = await getDashboard();
       const data = res.data.data;
 
       if (data && data.subjects && data.subjects.length > 0) {

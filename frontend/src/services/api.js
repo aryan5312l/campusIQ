@@ -13,10 +13,7 @@ API.interceptors.request.use((req) => {
 
 export const loginUser = (data) => API.post("/api/auth/login", data);
 export const registerUser = (data) => API.post("/api/auth/register", data);
-export const syncData = (token) => API.post("/api/sync", {}, {
-    headers: {
-        Authorization: `Bearer ${token}`,
-    }
-});
+export const syncData = () => API.post("/api/sync", {});
+export const getDashboard = () => API.get("/api/dashboard");
 
 export default API;
