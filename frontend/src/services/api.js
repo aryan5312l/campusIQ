@@ -1,7 +1,7 @@
 import axios from "axios";
 
 const API = axios.create({
-    baseURL: "https://campusiq-fwwt.onrender.com",
+    baseURL: import.meta.env.VITE_API_BASE_URL || "https://campusiq-fwwt.onrender.com",
 });
 
 // attach token automatically
@@ -11,9 +11,9 @@ API.interceptors.request.use((req) => {
   return req;
 });
 
-export const loginUser = (data) => API.post("/auth/login", data);
-export const registerUser = (data) => API.post("/auth/register", data);
-export const syncData = (token) => API.post("/sync", {}, {
+export const loginUser = (data) => API.post("/api/auth/login", data);
+export const registerUser = (data) => API.post("/api/auth/register", data);
+export const syncData = (token) => API.post("/api/sync", {}, {
     headers: {
         Authorization: `Bearer ${token}`,
     }
